@@ -14,7 +14,7 @@ use frame_support::{
     pallet_macros::import_section,
     traits::{tokens::fungible, IsSubType},
 };
-use substrate_fixed::types::{I32F32, I64F64, I96F32};
+use substrate_fixed::types::I32F32;
 
 use codec::{Decode, Encode};
 use frame_support::sp_runtime::transaction_validity::InvalidTransaction;
@@ -2161,6 +2161,16 @@ pub enum CallType {
 pub enum EpochResponse<AccountId> {
     IncentiveTrue(Vec<I32F32>),
     IncentiveFalse(Vec<(AccountId, u64, u64)>),
+}
+
+impl<AccountId: Encode> Encode for EpochResponse<AccountId> {
+    fn encode(&self) -> Vec<u8> {
+        match self {
+            EpochResponse::IncentiveTrue(data) => data.encode(),
+            EpochResponse::IncentiveFalse(data) => data.encode(),
+        }
+    }
+    
 }
 
 // Implement `TryFrom` to convert `EpochResponse` to `Vec<(AccountId, u64, u64)>`
