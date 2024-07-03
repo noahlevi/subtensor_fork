@@ -334,6 +334,10 @@ impl<T: Config> Pallet<T> {
             .collect()
     }
 
+    pub fn subtensor_epoch(netuid: u16, incentive: Option<bool>) -> EpochResponse<T::AccountId> {
+        Self::epoch(netuid, incentive)
+    }
+
     /// Calculates reward consensus values, then updates rank, trust, consensus, incentive, dividend, pruning_score, emission and bonds, and
     /// returns the emissions for uids/hotkeys in a given `netuid`.
     ///
@@ -348,7 +352,7 @@ impl<T: Config> Pallet<T> {
     ///     - Print debugging outputs.
     ///
     #[allow(clippy::indexing_slicing)]
-    pub fn epoch(netuid: u16, rao_emission: u64) -> Vec<(T::AccountId, u64, u64)> {
+    pub fn epoch(netuid: u16, _incentive: Option<bool>) -> EpochResponse<T::AccountId> {
         // Get subnetwork size.
         let n: u16 = Self::get_subnetwork_n(netuid);
         log::trace!("Number of Neurons in Network: {:?}", n);
@@ -578,6 +582,7 @@ impl<T: Config> Pallet<T> {
         }
 
         // Compute rao based emission scores. range: I96F32(0, rao_emission)
+        let rao_emission: u64 = PendingEmission::<T>::get(netuid);
         let float_rao_emission: I96F32 = I96F32::from_num(rao_emission);
 
         let server_emission: Vec<I96F32> = normalized_server_emission
@@ -691,7 +696,7 @@ impl<T: Config> Pallet<T> {
             });
 
         // Emission tuples ( hotkeys, server_emission, validator_emission )
-        hotkeys
+        let emmission_tuples = hotkeys
             .into_iter()
             .map(|(uid_i, hotkey)| {
                 (
@@ -700,7 +705,12 @@ impl<T: Config> Pallet<T> {
                     validator_emission[uid_i as usize],
                 )
             })
-            .collect()
+            .collect();
+        
+        match _incentive.unwrap_or(false) {
+            false => EpochResponse::IncentiveFalse(emmission_tuples),
+            true => EpochResponse::IncentiveTrue(incentive.clone()),
+        }
     }
 
     pub fn get_float_rho(netuid: u16) -> I32F32 {

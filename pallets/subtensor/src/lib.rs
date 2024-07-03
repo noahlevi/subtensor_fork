@@ -14,6 +14,7 @@ use frame_support::{
     pallet_macros::import_section,
     traits::{tokens::fungible, IsSubType},
 };
+use substrate_fixed::types::{I32F32, I64F64, I96F32};
 
 use codec::{Decode, Encode};
 use frame_support::sp_runtime::transaction_validity::InvalidTransaction;
@@ -2151,6 +2152,27 @@ pub enum CallType {
     RegisterNetwork,
     #[default]
     Other,
+}
+
+/************************************************************
+    EpochResponse definition
+************************************************************/
+#[derive(Debug, PartialEq)]
+pub enum EpochResponse<AccountId> {
+    IncentiveTrue(Vec<I32F32>),
+    IncentiveFalse(Vec<(AccountId, u64, u64)>),
+}
+
+// Implement `TryFrom` to convert `EpochResponse` to `Vec<(AccountId, u64, u64)>`
+impl<AccountId> TryFrom<EpochResponse<AccountId>> for Vec<(AccountId, u64, u64)> {
+    type Error = &'static str;
+
+    fn try_from(value: EpochResponse<AccountId>) -> Result<Self, Self::Error> {
+        match value {
+            EpochResponse::IncentiveFalse(vec) => Ok(vec),
+            _ => Err("Conversion failed: Expected IncentiveFalse variant"),
+        }
+    }
 }
 
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]

@@ -1634,6 +1634,13 @@ impl_runtime_apis! {
         }
     }
 
+    impl subtensor_custom_rpc_runtime_api::EpochRuntimeApi<Block> for Runtime {
+        fn subtensor_epoch(netuid: u16, incentive: Option<bool>) -> Vec<u8> {
+            let result = SubtensorModule::subtensor_epoch( netuid, incentive );
+            result.encode()
+        }
+    }
+
     impl subtensor_custom_rpc_runtime_api::StakeInfoRuntimeApi<Block> for Runtime {
         fn get_stake_info_for_coldkey( coldkey_account_vec: Vec<u8> ) -> Vec<u8> {
             let result = SubtensorModule::get_stake_info_for_coldkey( coldkey_account_vec );

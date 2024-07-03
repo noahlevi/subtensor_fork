@@ -12,7 +12,7 @@ use std::sync::Arc;
 use sp_api::ProvideRuntimeApi;
 
 pub use subtensor_custom_rpc_runtime_api::{
-    DelegateInfoRuntimeApi, NeuronInfoRuntimeApi, SubnetInfoRuntimeApi,
+    DelegateInfoRuntimeApi, EpochRuntimeApi, NeuronInfoRuntimeApi, SubnetInfoRuntimeApi,
     SubnetRegistrationRuntimeApi,
 };
 
@@ -51,6 +51,14 @@ pub trait SubtensorCustomApi<BlockHash> {
 
     #[method(name = "subnetInfo_getLockCost")]
     fn get_network_lock_cost(&self, at: Option<BlockHash>) -> RpcResult<u64>;
+
+    #[method(name = "epoch_subtensorEpoch")]
+    fn subtensor_epoch(
+        &self,
+        netuid: u16,
+        incentive: Option<bool>,
+        at: Option<BlockHash>,
+    ) -> RpcResult<Vec<u8>>;
 }
 
 pub struct SubtensorCustom<C, P> {
@@ -99,6 +107,7 @@ where
     C::Api: NeuronInfoRuntimeApi<Block>,
     C::Api: SubnetInfoRuntimeApi<Block>,
     C::Api: SubnetRegistrationRuntimeApi<Block>,
+    C::Api: EpochRuntimeApi<Block>,
 {
     fn get_delegates(&self, at: Option<<Block as BlockT>::Hash>) -> RpcResult<Vec<u8>> {
         let api = self.client.runtime_api();
@@ -193,6 +202,20 @@ where
 
         api.get_subnet_info(at, netuid)
             .map_err(|e| Error::RuntimeError(format!("Unable to get subnet info: {:?}", e)).into())
+    }
+
+    fn subtensor_epoch(
+        &self,
+        netuid: u16,
+        incentive: Option<bool>,
+        at: Option<<Block as BlockT>::Hash>,
+    ) -> RpcResult<Vec<u8>> {
+        let api = self.client.runtime_api();
+        let at = at.unwrap_or_else(|| self.client.info().best_hash);
+
+        api.subtensor_epoch(at, netuid, incentive).map_err(|e| {
+            Error::RuntimeError(format!("Unable to get subtensor_epoch: {:?}", e)).into()
+        })
     }
 
     fn get_subnet_hyperparams(
